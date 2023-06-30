@@ -46,7 +46,7 @@ if __name__ == '__main__':
     end_idx = args.end_idx
         
     out_dir = join(args.dir_data, 'prepared_data')
-       
+
     model = torch.nn.DataParallel(RAFT(args))
     model.load_state_dict(torch.load(args.model))
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         f_im_next = f_im1[:-4] + '_next.jpg'
 
         im2 = np.array(Image.open(f_im_next)).astype(np.uint8) 
-                       
+
         im1 = torch.from_numpy(im1).permute(2, 0, 1).float()
         im1 = im1[None,].to(DEVICE)   
         

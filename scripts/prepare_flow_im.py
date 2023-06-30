@@ -23,6 +23,7 @@ def downsample_im(im, downsample_scale, y_cutoff):
     im = resize(im, (h_im,w_im,3), order=1, preserve_range=True, anti_aliasing=False) 
     im = im.astype('uint8')
     im = im[y_cutoff:,...]
+    
     return im
     
 
@@ -42,9 +43,8 @@ if __name__ == '__main__':
     downsample_scale = 4
     y_cutoff = 33
     
-       
     nusc = NuScenes(args.version, dataroot = dir_nuscenes, verbose=False)
-       
+
     dir_data_out = join(args.dir_data, 'prepared_data')
     if not os.path.exists(dir_data_out):
         os.makedirs(dir_data_out)
@@ -57,31 +57,34 @@ if __name__ == '__main__':
     
     
     sample_indices = torch.load(join(args.dir_data,'data_split.tar'))['all_indices'] 
-         
     ct = 0         
+
     for sample_idx in sample_indices:
 
         cam_token = nusc.sample[sample_idx]['data']['CAM_FRONT']
         cam_data = nusc.get('sample_data', cam_token)
         
         if cam_data['next']:
-                
-            cam_token2 = cam_data['next']                    
+            # token num (string) 
+            cam_token2 = cam_data['next']
+            #token num info (need filename) (string)               
             cam_data2 = nusc.get('sample_data', cam_token2)
+            # get filename
             cam_path2 = join(nusc.dataroot, cam_data2['filename'])
+            # load image
             im2 = io.imread(cam_path2)
             
             cam_token3 = cam_data2['next']        
             cam_data3 = nusc.get('sample_data', cam_token3)
             cam_path3 = join(nusc.dataroot, cam_data3['filename'])
             im3 = io.imread(cam_path3)
-             
+            
             im = downsample_im(im2, downsample_scale, y_cutoff)
             im_next = downsample_im(im3, downsample_scale, y_cutoff)
-                       
+
             io.imsave(join(dir_data_out, '%05d_im.jpg' % sample_idx), im)
             io.imsave(join(dir_data_out, '%05d_im_next.jpg' % sample_idx), im_next)          
-           
+        
         ct += 1
         print('Save image %d/%d' % ( ct, len(sample_indices) ) )
         

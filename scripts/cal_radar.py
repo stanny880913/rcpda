@@ -58,14 +58,14 @@ if __name__ == '__main__':
         K = matrix['K']
         
         x1, y1, depth1, all_times1, x2, y2, depth2, all_times2, rcs, v_comp= merge_selected_radar(nusc, sample_idx, frm_range)
-                
+        
         depth_map1, flow, time_map1, rcs_map1, v_comp_map1 = cal_depthMap_flow(x1, y1, depth1, all_times1, x2, y2, depth2, all_times2, rcs, v_comp, downsample_scale=4, y_cutoff=33)        
         uv2 = radarFlow2uv(flow, K, depth_map1, downsample_scale=4, y_cutoff=33)
         
         radar_data = np.concatenate((depth_map1[..., None], uv2), axis=2) 
         
         np.save(join(dir_data_out, '%05d_radar.npy' % sample_idx), radar_data) 
-         
+        
         ct += 1
         print('compute depth %d/%d' % ( ct, end_idx - start_idx + 1 ) )
         

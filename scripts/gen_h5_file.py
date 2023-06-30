@@ -35,7 +35,6 @@ def create_data_group(hf, mode, sample_indices):
     group.create_dataset('T',data=np.array(T_list))  
     group.create_dataset('msk_lh',data=np.array(msk_lh_list))
     del K_list, T_list, msk_lh_list
-     
     
     uv2_im_list = []
     for idx in tqdm(sample_indices, '%s:uv2_im' % mode):
@@ -57,12 +56,12 @@ def create_data_group(hf, mode, sample_indices):
     for idx in tqdm(sample_indices, '%s:gt' % mode):
         gt = np.load(join(dir_label, '%05d_gt.npy' % idx)).astype('float32')
         gt_list.append(gt)
-     
+    
     group.create_dataset('gt',data=np.array(gt_list))   
     group.create_dataset('indices',data=np.array(sample_indices))
     del gt_list
 
-           
+        
 
 if __name__ == '__main__':
     

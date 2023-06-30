@@ -91,7 +91,7 @@ def merge_selected_radar(nusc, sample_idx, frame_range=[0,12]):
     
     all_times1 = np.zeros((0,))
     all_times2 = np.zeros((0,))
-        
+         
     # Get reference pose and timestamp.    
     cam_token = sample_rec['data']['CAM_FRONT']
     cam_data = nusc.get('sample_data', cam_token)   
@@ -108,7 +108,7 @@ def merge_selected_radar(nusc, sample_idx, frame_range=[0,12]):
     
 
     # Aggregate current and previous sweeps.
-    current_sd_rec = radar_sample 
+    current_sd_rec = radar_sample        
     k=0    
     while k < frame_range[0]:
         # Abort if there are no previous sweeps.
@@ -117,6 +117,7 @@ def merge_selected_radar(nusc, sample_idx, frame_range=[0,12]):
         else:
             current_sd_rec = nusc.get('sample_data', current_sd_rec['prev'])
         k += 1
+        
 
     nsweeps = frame_range[1] - frame_range[0] + 1
         
@@ -124,7 +125,7 @@ def merge_selected_radar(nusc, sample_idx, frame_range=[0,12]):
                 
         current_pc1, time_lag1 = current_2_ref(current_sd_rec, M_refCam1_from_global, ref_time1)
         current_pc2, time_lag2 = current_2_ref(current_sd_rec, M_refCam2_from_global, ref_time2)
-
+              
         times1 = time_lag1 * np.ones((current_pc1.nbr_points(),))
         times2 = time_lag2 * np.ones((current_pc2.nbr_points(),))
 
@@ -187,19 +188,19 @@ def cal_depthMap_flow(x1, y1, depth1, all_times1, x2, y2, depth2, all_times2, rc
             time_map1[y1_one,x1_one] = all_times1[i]
             rcs_map1[y1_one,x1_one] = rcs[i]
             v_comp_map1[y1_one,x1_one] = v_comp[i]
-                        
+                          
         elif depth_map1[y1_one,x1_one] > depth1[i]: 
             depth_map1[y1_one,x1_one] = depth1[i]
             flow[y1_one,x1_one, ...] = [x2[i] - x1[i], y2[i] - y1[i]] 
             time_map1[y1_one,x1_one] = all_times1[i]
             rcs_map1[y1_one,x1_one] = rcs[i]
             v_comp_map1[y1_one,x1_one] = v_comp[i]
-            
+              
     depth_map1, flow = depth_map1[y_cutoff:,...], flow[y_cutoff:,...]
     time_map1, rcs_map1, v_comp_map1 = time_map1[y_cutoff:,...], rcs_map1[y_cutoff:,...], v_comp_map1[y_cutoff:,...]
     
     v_comp_map1 = (v_comp_map1 > 0.5).astype(float)
-        
+           
     return depth_map1, flow, time_map1, rcs_map1, v_comp_map1
 
 

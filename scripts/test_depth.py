@@ -34,31 +34,22 @@ def prd_one_sample(model, test_loader, device, idx, args,result_path):
     with torch.no_grad():
         for ct, sample in enumerate(test_loader):
             if ct == idx:
-                data_in, d_lidar = sample['data_in'].to(device), sample['d_lidar'].to(device)               
+                data_in = sample['data_in'].to(device)      
                 
                 prd = model(data_in)[0]
                 
                 im = data_in[0][0:3,...].permute(1,2,0).to('cpu').numpy().astype('uint8')
                 d_radar = data_in[0][3,...].to('cpu').numpy()
-                d_lidar = d_lidar[0][0].to('cpu').numpy()               
                 prd = prd[0][0].cpu().numpy()
-
 
                 break
             
     d_max = args.d_max
     d_min = 1e-3
     
-    
     prd = prd.clip(d_min, d_max)    
-    msk_valid = np.logical_and(d_lidar>d_min, d_lidar<d_max)    
-    d_lidar = d_lidar * msk_valid    
     
-    d_error = np.abs( d_lidar - prd ) * msk_valid   
-    
-    depth = np.concatenate([d_lidar, prd], axis = 0)
-
-    # INFO predict and save result images
+        # INFO predict and save result images
     # pre_result = prd
 
     # plt.close('all')   
@@ -81,20 +72,12 @@ def prd_one_sample(model, test_loader, device, idx, args,result_path):
     plt.title('Radar')
     plt.colorbar()
     plt.show()
-   
+
     plt.figure()
-    plt.imshow(depth, cmap='jet')
-    plt.title('Depth')
+    plt.imshow(prd, cmap='jet')
+    plt.title('predict')
     plt.colorbar()
     plt.show()
-        
-    plt.figure()
-    plt.imshow(d_error, cmap='jet')
-    plt.title('Error')
-    plt.colorbar()
-    plt.show()
-
-
 
 def compute_errors(gt, pred):
     thresh = np.maximum((gt / pred), (pred / gt))
@@ -121,8 +104,6 @@ def compute_errors(gt, pred):
        
     return silog, log10, mae, abs_rel, sq_rel, rmse, rmse_log, d1, d2, d3
 
-
-
 def evaluate(model, test_loader, device, d_min=1e-3, d_max=70, eval_low_height = False):
     
     model.eval()
@@ -147,25 +128,25 @@ def evaluate(model, test_loader, device, d_min=1e-3, d_max=70, eval_low_height =
        
     print(' \n silog: %f, log10: %f, mae: %f, abs_rel: %f, sq_rel: %f, rmse: %f, rmse_log: %f, d1: %f, d2: %f, d3: %f' \
           % (errors[0], errors[1], errors[2], errors[3], errors[4], errors[5], errors[6], errors[7], errors[8], errors[9]))
-   
-          
+
 def main(args):
     
     if args.dir_data == None:
         this_dir = os.path.dirname(__file__)
         args.dir_data = join(this_dir, '..', 'data')
-   
+
     if not args.dir_result:
         args.dir_result = join(args.dir_data, 'train_result', 'depth_completion')
 
     args.path_data_file = join(args.dir_data, 'prepared_data.h5') 
     
-    args.path_radar_file = join(args.dir_data, 'mer_2_30_5_0.5.h5')
+    # args.path_radar_file = join(args.dir_data, 'mer_2_30_5_0.5.h5')
+    args.path_radar_file = '/media/stannyho/ssd/rc-pda/data/mer_2_30_5_0.5.h5'
                 
     device = init_env()
     
-    train_loader = init_data_loader(args, 'train')
-    val_loader = init_data_loader(args, 'val')
+    # train_loader = init_data_loader(args, 'train')
+    # val_loader = init_data_loader(args, 'val')
     test_loader = init_data_loader(args, 'test')
     
         
@@ -216,7 +197,7 @@ def main(args):
 
     print('\n Low height')
     evaluate(model, test_loader, device, d_min=1e-3, d_max=args.d_max, eval_low_height = True)
-      
+    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()       

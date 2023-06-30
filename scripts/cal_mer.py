@@ -118,7 +118,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dir_data', type=str)
-    parser.add_argument('--dir_result', type=str)
+    parser.add_argument('--dir_result', default='/media/stannyho/ssd/rc-pda/models/cal_mer', type=str)
 
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--test_batch_size', type=int, default=1)

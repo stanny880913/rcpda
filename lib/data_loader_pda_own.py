@@ -87,18 +87,19 @@ class Dataset(data.Dataset):
         self.mode = mode
         data = h5py.File(path_data_file, 'r')[mode]
         self.im_list = data['im'][...]
-        self.K_list = data['K']
-        self.T_list = data['T']
+        # self.K_list = data['K']
+        # self.T_list = data['T']
         self.uv2_im_list = data['im_uv'][...].astype('f4')
         self.radar_list = data['radar'][...].astype('f4')
-        self.gt = data['gt'][..., [0]].astype('f4')
-        self.indices = data['indices']
-        if mode == 'test':
-            self.msk_lh_list = data['msk_lh']
+        # self.gt = data['gt'][..., [0]].astype('f4')
+        # self.indices = data['indices']
+        # if mode == 'test':
+            # self.msk_lh_list = data['msk_lh']
 
     def __len__(self):
         'Denotes the total number of samples'
-        return len(self.indices)
+        # return len(self.indices)
+        return len(self.im_list)
 
     def __getitem__(self, idx):
         'Generate one sample of data'
@@ -107,11 +108,21 @@ class Dataset(data.Dataset):
             'float32').transpose((2, 0, 1))/255   # (3,h,w)
         h, w = im1.shape[1:]
 
-        K = self.K_list[idx]
-        R = self.T_list[idx][:3, :3]
+        # K = self.K_list[idx]
+        K = [[700.63928,    0,  612.81753],
+             [0,  706.29767,  363.39884],
+             [0,    0,    1]]
+
+        K = np.array(K)
+        # R = self.T_list[idx][:3, :3]
+        R = [[9.99995248e-01, 1.45587794e-04, 3.07935521e-03],
+             [-1.45900325e-04,  9.99999984e-01,  1.01268086e-04],
+             [-3.07934042e-03, -1.01716884e-04,  9.99995254e-01]]
+
+        R = np.array(R)
 
         uv1_map = cal_uv1(h, w, K, downsample_scale=4,
-                          y_cutoff=33).transpose((2, 0, 1))  # (2,h,w)
+                        y_cutoff=33).transpose((2, 0, 1))  # (2,h,w)
         uv2_im = self.uv2_im_list[idx].astype(
             'float32').transpose((2, 0, 1))  # (2,h,w)
 
@@ -120,10 +131,10 @@ class Dataset(data.Dataset):
         uv2_radar = self.radar_list[idx][..., [1, 2]].astype(
             'float32').transpose((2, 0, 1))  # (2,h,w)
 
-        d_lidar = self.gt[idx].astype('float32').transpose((2, 0, 1))
+        # d_lidar = self.gt[idx].astype('float32').transpose((2, 0, 1))
 
         # limit gt depth to [0,50]
-        d_lidar[d_lidar > 50] = 0
+        # d_lidar[d_lidar > 50] = 0
         # filter radar detph
         d_radar[d_radar > 50] = 0
         msk_radar = d_radar[0] > 0              # h x w
@@ -143,15 +154,19 @@ class Dataset(data.Dataset):
         # INFO create data_in
         data_in = np.concatenate(
             (im1, d_radar_norm, uv1_map, duv_im, duv_radar), axis=0)    # (10,h,w)
+        
+        # data_in = np.concatenate((im1), axis=0)    # (10,h,w)
 
-        if self.mode == 'test':
-            msk_lh = self.msk_lh_list[idx].astype(
-                'float32')[None, ...]          # (1,h,w)
-            sample = {'data_in': data_in, 'd_lidar': d_lidar,
-                      'd_radar': d_radar, 'msk_lh': msk_lh}
-        else:
-            sample = {'data_in': data_in,
-                      'd_lidar': d_lidar, 'd_radar': d_radar}
+        # if self.mode == 'test':
+        #     msk_lh = self.msk_lh_list[idx].astype(
+        #         'float32')[None, ...]          # (1,h,w)
+        #     sample = {'data_in': data_in, 'd_lidar': d_lidar,
+        #               'd_radar': d_radar, 'msk_lh': msk_lh}
+        # else:
+        #     sample = {'data_in': data_in,
+        #               'd_lidar': d_lidar, 'd_radar': d_radar}
+        if self.mode == 'own':
+            sample = {'data_in': data_in, 'd_radar': d_radar} 
 
         return sample
 
@@ -159,8 +174,8 @@ class Dataset(data.Dataset):
 if __name__ == '__main__':
 
     this_dir = os.path.dirname(__file__)
-    dir_data = join(this_dir, '..', 'data')
-    path_data_file = join(dir_data, 'prepared_data.h5')
+    dir_data = join(this_dir, '..', 'data_own')
+    path_data_file = join(dir_data, 'own_prepared_data.h5')
     args_train_set = {'path_data_file': path_data_file,
                       'mode': 'train'}
     args_train_loader = {'batch_size': 6,

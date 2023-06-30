@@ -1,6 +1,7 @@
 import torch
 from torch.utils import data
 import numpy as np
+import os
 from os.path import join
 import matplotlib.pyplot as plt
 import h5py
@@ -11,6 +12,11 @@ def init_data_loader(args, mode):
     if mode == 'train':
         batch_size = args.batch_size
         shuffle = True
+        # batch_size = args.test_batch_size
+        # shuffle = False
+    elif mode == 'custum':
+        batch_size = args.batch_size
+        shuffle = True
     else:
         batch_size = args.test_batch_size
         shuffle = False
@@ -18,7 +24,7 @@ def init_data_loader(args, mode):
     args_dataset = {'path_data_file': args.path_data_file,
                     'path_radar_file': args.path_radar_file,
                     'mode': mode}
-
+    
     args_data_loader = {'batch_size': batch_size,
                         'shuffle': shuffle,
                         'num_workers': args.num_workers}
@@ -34,9 +40,12 @@ class Dataset(data.Dataset):
 
         self.mode = mode
         data = h5py.File(path_data_file, 'r')[mode]
+        
         data_radar = h5py.File(path_radar_file, 'r')[mode]
 
+
         self.im_list = data['im'][...]
+        # im_list.shape() = 192,400,3
         self.gt = data['gt'][..., [0]].astype('f4')
         self.indices = data['indices']
         self.radar_raw_list = data['radar'][..., 0].astype('f4')
@@ -51,25 +60,25 @@ class Dataset(data.Dataset):
     def __getitem__(self, idx):
         'Generate one sample of data'
 
-        im = self.im_list[idx].astype('float32').transpose((2, 0, 1))
+        im1 = self.im_list[idx].astype('float32').transpose((2, 0, 1))
         d_radar_raw = self.radar_raw_list[idx].astype('float32')[None, ...]
         d_radar_multi = self.radar_list[idx].astype(
-            'float32')/100         # centimeter to meter
+            'float32')/100             # centimeter to meter
 
         d_lidar = self.gt[idx].astype('float32').transpose(
-            (2, 0, 1))        # (1,h,w)
+            (2, 0, 1))            # (1,h,w)
 
         d_radar_raw[d_radar_raw > 50] = 0
         d_radar_multi[d_radar_multi > 50] = 0
         d_lidar[d_lidar > 50] = 0
 
-        d_radar = np.concatenate((d_radar_raw, d_radar_multi), axis=0)
+        data_in = np.concatenate((im1, d_radar_raw, d_radar_multi), axis=0)
 
         if self.mode == 'test':
             msk_lh = self.msk_lh_list[idx].astype('float32')[None, ...]
-            sample = {'im': im, 'd_radar': d_radar, 'd_lidar': d_lidar,
+            sample = {'data_in': data_in, 'd_lidar': d_lidar,
                       'msk_lh': msk_lh, 'sample_idx': self.indices[idx]}
         else:
-            sample = {'im': im, 'd_radar': d_radar, 'd_lidar': d_lidar}
+            sample = {'data_in': data_in, 'd_lidar': d_lidar}
 
         return sample
